@@ -11,3 +11,6 @@ Each folder contains a Colab notebook with my implementations and notes.
 - [ ] makemore pt4 — backprop ninja
 - [ ] makemore pt5 — WaveNet
 - [ ] nanoGPT — GPT from scratch
+
+
+![image-name](https://github.com/sauraviitj/neural-networks-zero-to-hero/blob/main/Classes%20working.png)
