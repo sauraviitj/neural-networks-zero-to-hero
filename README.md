@@ -30,4 +30,4 @@ The destination. Attention mechanism, transformer, the thing inside every LLM yo
 - [ ] nanoGPT — GPT from scratch
 
 
-![image-name](https://github.com/sauraviitj/neural-networks-zero-to-hero/blob/main/Classes%20working.png)
+![image-name](https://github.com/sauraviitj/neural-networks-zero-to-hero/blob/main/1%20and%202%20Micrograd/Classes%20working.png)
