@@ -1,4 +1,4 @@
-# neural-networks-zero-to-hero
+# Neural-Networks-zero-to-hero
 
 Working through Andrej Karpathy's Neural Networks: Zero to Hero playlist.
 Each folder contains a Colab notebook with my implementations and notes.
