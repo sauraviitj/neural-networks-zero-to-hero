@@ -24,7 +24,7 @@ The destination. Attention mechanism, transformer, the thing inside every LLM yo
 ```
 ## Progress
 - [✅] micrograd — autograd engine from scratch
-- [ ] makemore pt1 — bigram language model
+- [✅ ] makemore pt1 — bigram language model
 - [ ] makemore pt2 — MLP
 - [ ] makemore pt3 — activations & gradients
 - [ ] makemore pt4 — backprop ninja
