@@ -20,7 +20,6 @@ Video 6 — WaveNet
 Deeper architectures. Less critical for your immediate goals — can go faster here.
 Video 7 — Let's build GPT
 The destination. Attention mechanism, transformer, the thing inside every LLM you've worked with. After this, your EMNLP work and DuoMind make sense at a completely different level.
-
 ```
 ## Progress
 - [✅] micrograd — autograd engine from scratch
