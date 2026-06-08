@@ -173,3 +173,4 @@ apply gamma and beta
 ## One-line summary
 
 BatchNorm normalizes each neuron across the mini-batch, then uses \(\gamma\) and \(\beta\) to re-scale it, and uses running averages of mean/std at test time.
+![image-name]()
