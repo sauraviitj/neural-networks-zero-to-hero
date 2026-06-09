@@ -1,176 +1,193 @@
-# Batch Normalization
+# 📐 Batch Normalization — Complete Notes
 
-Batch Normalization helps neural networks train faster and more stably by keeping activations in a healthier range during training.
-It reduces the problem of changing activation distributions inside the network, which makes optimization easier.
-
----
-
-## Why BatchNorm is needed
-
-During training, the values flowing through a network keep changing as earlier weights update.
-This makes learning unstable and can slow training down.
-BatchNorm helps by keeping activations well-behaved before they are passed to the next layer.
+Batch Normalization helps neural networks train faster and more stably
+by keeping activations in a healthier range at each layer during training.
 
 ---
 
-## The core idea
+## 🧠 Why BatchNorm is needed
 
-For a layer output \(z\), BatchNorm does this for each neuron:
+During training, weights keep changing, so the input distribution to each
+layer keeps shifting too. This is called **internal covariate shift** and
+it makes learning slow and unstable.
 
-\[
-\mu_B = \frac{1}{m}\sum_{i=1}^{m} z_i
-\]
-
-\[
-\sigma_B^2 = \frac{1}{m}\sum_{i=1}^{m}(z_i - \mu_B)^2
-\]
-
-\[
-\hat{z}_i = \frac{z_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}}
-\]
-
-Then it applies learnable scale and shift:
-
-\[
-y_i = \gamma \hat{z}_i + \beta
-\]
-
-- \(\mu_B\): mini-batch mean.
-- \(\sigma_B^2\): mini-batch variance.
-- \(\epsilon\): small constant for numerical stability.
-- \(\gamma\): learnable scale.
-- \(\beta\): learnable shift.
+BatchNorm fixes this by normalizing activations at each layer so the next
+layer always sees inputs with a stable distribution.
 
 ---
 
-## Layer-wise or neuron-wise?
+## ⚙️ The core formula
 
-BatchNorm is applied per neuron / per feature, but computed across the batch.
-So if your activation matrix is shape `(batch_size, n_hidden)`, BatchNorm computes one mean and one std for each hidden neuron using all examples in that batch.
+For a layer output `z`, BatchNorm does this **per neuron**, across the batch:
 
-### Picture
+```text
+Step 1 — Batch mean:
+  mu  = (1/m) * sum(z_i)
+
+Step 2 — Batch variance:
+  var = (1/m) * sum((z_i - mu)^2)
+
+Step 3 — Normalize:
+  z_norm = (z - mu) / sqrt(var + epsilon)
+
+Step 4 — Scale and shift:
+  y = gamma * z_norm + beta
+```
+
+| Symbol    | Meaning                                  |
+|-----------|------------------------------------------|
+| `mu`      | mean of the mini-batch for that neuron   |
+| `var`     | variance of the mini-batch               |
+| `epsilon` | small number to avoid dividing by zero   |
+| `gamma`   | learnable scale (trained by backprop)    |
+| `beta`    | learnable shift (trained by backprop)    |
+
+---
+
+## 🔢 Per neuron, across the batch
+
+BatchNorm is applied per neuron, computed across the batch.
+
+If activation shape is `(batch_size, n_hidden)`:
 
 ```text
 Batch shape: (32, 200)
 
-For neuron 1:  use all 32 values → mean, std → normalize
-For neuron 2:  use all 32 values → mean, std → normalize
+neuron 1   → look at all 32 values → compute mean, std → normalize
+neuron 2   → look at all 32 values → compute mean, std → normalize
 ...
-For neuron 200: use all 32 values → mean, std → normalize
+neuron 200 → look at all 32 values → compute mean, std → normalize
+```
+
+Each neuron gets its own mean and std — not one global mean for all neurons.
+
+---
+
+## 🎛️ Why gamma and beta exist
+
+If we only normalized to zero mean and unit variance, the network would
+be too constrained to represent useful patterns.
+
+- `gamma` → lets the network stretch or shrink the values
+- `beta`  → lets the network shift values left or right
+
+This means BatchNorm normalizes first, then lets the model recover
+the best scale and offset by learning `gamma` and `beta` via gradient descent.
+
+---
+
+## 🔁 Simple flow
+
+```text
+Input
+  |
+  v
+Linear Layer  (z = X @ W + b)
+  |
+  v
+BatchNorm     (normalize z, then apply gamma and beta)
+  |
+  v
+Activation    (tanh / ReLU)
+  |
+  v
+Next Layer
 ```
 
 ---
 
-## Why gamma and beta exist
+## 📊 Small example (batch size = 4)
 
-If we only normalized to zero mean and unit variance, the network would become too constrained.
-So we add:
+Suppose one neuron outputs:
 
-- \(\gamma\): lets the network stretch or shrink the normalized values.
-- \(\beta\): lets the network shift them left or right.
+```text
+z = [2, 4, 6, 8]
+```
 
-This means BatchNorm normalizes first, then gives the model freedom to recover the best scale and offset.
+**Step 1 — mean:**
+
+```text
+mu = (2 + 4 + 6 + 8) / 4 = 5
+```
+
+**Step 2 — variance:**
+
+```text
+var = ((2-5)^2 + (4-5)^2 + (6-5)^2 + (8-5)^2) / 4
+    = (9 + 1 + 1 + 9) / 4
+    = 5
+```
+
+**Step 3 — normalize:**
+
+```text
+z_norm = (z - 5) / sqrt(5 + eps)
+       ≈ [-1.34, -0.45, +0.45, +1.34]
+```
+
+**Step 4 — scale and shift:**
+
+```text
+y = gamma * z_norm + beta
+```
+
+If gamma=1 and beta=0  →  values stay as z_norm
+As training progresses →  gamma and beta adjust to best values
 
 ---
 
-## Training vs testing
+## 🕒 Training vs Testing
 
-During training, BatchNorm uses the mean and std of the current mini-batch.
-During testing, batch statistics are not reliable, especially if the batch is small or size 1.
-So BatchNorm uses running averages of mean and std collected during training.
+| | Training | Testing |
+|---|---|---|
+| Mean used   | current batch mean  | running mean (EMA) |
+| Std used    | current batch std   | running std (EMA)  |
+| gamma/beta  | updated by backprop | fixed              |
 
 ---
 
-## Exponential moving average
+## 📈 Exponential Moving Average (EMA) for Test Time
 
-BatchNorm stores the statistics with an exponential moving average:
+During testing you may have only one example — no batch to compute stats from.
+So during training, BatchNorm keeps a **running estimate** using EMA:
 
 ```text
 running_mean = momentum * running_mean + (1 - momentum) * batch_mean
 running_std  = momentum * running_std  + (1 - momentum) * batch_std
 ```
 
-- `momentum` close to 1 means slow, stable updates.
-- `momentum` close to 0 means faster updates, but noisier estimates.
+> In Karpathy's notebook: momentum = 0.999
 
-### At inference time
+**What momentum means:**
+- New batch stats contribute only 0.1% each step
+- The running estimate slowly tracks the true average across the whole dataset
+- Old estimates are forgotten very slowly (0.999 weight to old value)
 
-BatchNorm uses:
+**Visual:**
+
+```text
+Batch 1  → batch_mean_1 ─┐
+Batch 2  → batch_mean_2 ─┼─► EMA → running_mean (used at test time)
+Batch 3  → batch_mean_3 ─┘
+...
+```
+
+**At inference time:**
 
 ```text
 z_norm = (z - running_mean) / (running_std + epsilon)
-y = gamma * z_norm + beta
+y      = gamma * z_norm + beta
 ```
 
-So:
-- batch mean/std → used during training.
-- running mean/std → used during testing.
+No batch needed. Uses stable running estimates built during training.
 
 ---
 
-## Small example
 
-Suppose one neuron outputs these values for a batch of 4 samples:
+## ✅ One-line summary
 
-```text
-z = [2, 4, 6, 8]
-```
+> BatchNorm normalizes each neuron across the mini-batch, applies learnable
+> `gamma` and `beta` to let the network recover the best scale, and uses
+> exponential moving averages of mean/std at test time for stable inference.
 
-### Step 1: mean
-
-\[
-\mu_B = \frac{2+4+6+8}{4} = 5
-\]
-
-### Step 2: variance
-
-\[
-\sigma_B^2 = \frac{(2-5)^2 + (4-5)^2 + (6-5)^2 + (8-5)^2}{4} = 5
-\]
-
-### Step 3: normalize
-
-\[
-\hat{z} = \frac{z - 5}{\sqrt{5 + \epsilon}}
-\]
-
-So the values become centered around 0 and scaled to a healthier range.
-
-### Step 4: scale and shift
-
-\[
-y = \gamma \hat{z} + \beta
-\]
-
-If \(\gamma = 1\) and \(\beta = 0\), you keep the normalized values.
-If the network learns better values, it can stretch or move them as needed.
-
----
-
-## Simple flow
-
-```text
-Input -> Linear layer -> BatchNorm -> tanh/ReLU -> next layer
-```
-
-### During training
-
-```text
-use batch mean/std
-update running mean/std
-learn gamma and beta
-```
-
-### During testing
-
-```text
-use running mean/std
-apply gamma and beta
-```
-
----
-
-## One-line summary
-
-BatchNorm normalizes each neuron across the mini-batch, then uses \(\gamma\) and \(\beta\) to re-scale it, and uses running averages of mean/std at test time.
 ![image-name](https://github.com/sauraviitj/neural-networks-zero-to-hero/blob/main/2%20%2C%203%2C%204%20Makemore/batchnorm.png)
