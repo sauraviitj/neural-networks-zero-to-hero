@@ -6,7 +6,7 @@ Each folder contains a Colab notebook with my implementations and notes.
 if the notebooks show error change the url by replacing "https://github.com/" with "https://nbviewer.org/github/"
 ```
 
-Video 1 (done) — micrograd
+Video 1 (done) — micrograd.
 You understand backprop and autograd. The engine underneath everything.
 Video 2 — makemore pt1
 He builds a bigram language model — predicts the next character from the previous one. This is where you first see a real training loop on real data. Directly relevant to your LLM work — every language model including LLaMA is doing a more sophisticated version of exactly this.
